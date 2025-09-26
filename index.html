@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Article Search</title>
+  <style>
+    :root{
+      --bg:#0f172a;        
+      --panel:#111827;     
+      --soft:#1f2937;      
+      --text:#e5e7eb;     
+      --muted:#9ca3af;     
+      --accent:#22d3ee;   
+      --ring:#38bdf8;      
+    }
+    * { box-sizing: border-box; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: radial-gradient(1200px 600px at 20% -10%, #1e293b 0%, var(--bg) 60%), var(--bg);
+      color: var(--text);
+      min-height:100svh;
+      display:flex; align-items:flex-start; justify-content:center;
+    }
+    .wrap{
+      width:min(1100px, 92vw);
+      margin:40px auto;
+    }
+
+    h1{
+      font-size:clamp(22px, 3vw, 30px);
+      margin:0 0 18px;
+      letter-spacing:.3px;
+    }
+    .hint{ color:var(--muted); margin-bottom:18px; }
+
+    .searchbar{
+      position:relative;
+      display:flex; gap:12px; align-items:center;
+      background: linear-gradient(180deg, var(--panel), #0b1220);
+      border:1px solid #263249;
+      border-radius:14px;
+      padding:12px 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+    .searchbar input{
+      flex:1;
+      background:transparent;
+      border:none;
+      outline:none;
+      color:var(--text);
+      font-size:16px;
+    }
+    .searchbar input::placeholder{ color:#6b7280; }
+    .chip{
+      font-size:12px; color:#a5b4fc; background:#0b1220; border:1px dashed #334155;
+      padding:4px 8px; border-radius:999px;
+    }
+
+    .count{
+      margin:14px 2px 8px; font-size:14px; color:var(--muted);
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap:16px;
+      margin-top:8px;
+    }
+
+    .card{
+      background:linear-gradient(180deg, var(--panel), #0a0f1c);
+      border:1px solid #263249;
+      border-radius:16px;
+      padding:16px;
+      transition: transform .15s ease, border-color .15s ease;
+    }
+    .card:hover{ transform: translateY(-2px); border-color:#33527a; }
+    .title{
+      font-weight:700; line-height:1.35;
+      margin:0 0 6px; font-size:16px;
+    }
+    .excerpt{
+      color:#cbd5e1; font-size:14px; line-height:1.55; margin:0 0 10px;
+    }
+    .meta{ font-size:12px; color:var(--muted); display:flex; gap:8px; flex-wrap:wrap; }
+    mark{
+      background: #fde047;  /* amber-300 */
+      color:#111827;
+      padding:0 .15em;
+      border-radius:4px;
+    }
+    .empty{
+      padding:28px;
+      text-align:center;
+      color:var(--muted);
+      border:1px dashed #2b3954;
+      border-radius:14px;
+      margin-top:10px;
+    }
+    .footer{
+      margin-top:26px; font-size:12px; color:var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1>Search</h1>
+    <div class="hint">Type keywords or phrases. Matches in the results will be <mark>highlighted</mark>.</div>
+
+    <div class="searchbar" role="search">
+      <input id="q" type="search" placeholder="Try: grid, layout, template columns…" autofocus aria-label="Search articles" />
+    </div>
+
+    <div id="count" class="count" aria-live="polite"></div>
+
+    <section id="results" class="grid" aria-label="Search results"></section>
+
+  </main>
+
+  <script>
+    const ARTICLES = Object.freeze([
+      {
+        title: "Understanding the difference between grid-template and grid-auto",
+        excerpt: "When CSS Grid arrived, two groups of properties confused many: grid-template-* and grid-auto-*.",
+        date: "2018-10-09", tags: ["CSS", "Grid", "Layout"], url: "#1"
+      },
+      {
+        title: "Recreating the GitHub contribution graph with CSS Grid",
+        excerpt: "Build the famous calendar graph only with modern CSS. No JavaScript required for the layout.",
+        date: "2019-01-12", tags: ["CSS", "Grid"], url: "#2"
+      },
+      {
+        title: "Grid Layout: auto-fill vs auto-fit explained",
+        excerpt: "They look similar but behave differently when tracks have free space. Here’s how to decide.",
+        date: "2020-06-04", tags: ["CSS", "Responsive"], url: "#3"
+      },
+      {
+        title: "11 practical grid-template-areas patterns",
+        excerpt: "Real-world snippets you can copy to build dashboards, galleries, and marketing pages.",
+        date: "2021-03-22", tags: ["CSS", "Patterns"], url: "#4"
+      },
+      {
+        title: "From Flexbox to Grid: choosing the right tool",
+        excerpt: "Flexbox excels at one dimension; Grid shines in two. Use them together for robust layouts.",
+        date: "2020-09-18", tags: ["CSS", "Flexbox", "Grid"], url: "#5"
+      },
+      {
+        title: "CSS Subgrid: what it is and how to use it today",
+        excerpt: "Subgrid lets children align to the parent’s tracks. Browser support is finally here.",
+        date: "2023-05-02", tags: ["CSS", "Subgrid"], url: "#6"
+      },
+      {
+        title: "Building a card grid that wraps cleanly",
+        excerpt: "Avoid awkward last rows by mixing minmax(), auto-fit, and gap to keep items tidy.",
+        date: "2022-02-14", tags: ["CSS", "Tips"], url: "#7"
+      },
+      {
+        title: "Centering in CSS: the definitive guide",
+        excerpt: "Grid, Flexbox, transforms, and margin tricks — pick the right approach for the job.",
+        date: "2017-11-11", tags: ["CSS"], url: "#8"
+      },
+      {
+        title: "Dark mode with CSS only",
+        excerpt: "Use prefers-color-scheme and custom properties to theme your site without JS.",
+        date: "2021-12-01", tags: ["CSS", "Design"], url: "#9"
+      },
+      {
+        title: "Responsive images without the headache",
+        excerpt: "srcset, sizes, and modern formats—get sharp images that load fast on any device.",
+        date: "2022-08-30", tags: ["Images", "Performance"], url: "#10"
+      }
+    ]);
+
+    const escapeHTML = (s) => s
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#39;");
+
+    function highlight(text, tokens){
+      if (!tokens.length) return escapeHTML(text);
+      const escaped = escapeHTML(text);
+      const pattern = tokens.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+      return escaped.replace(new RegExp(`(${pattern})`, "gi"), "<mark>$1</mark>");
+    }
+
+    const $q = document.getElementById("q");
+    const $results = document.getElementById("results");
+    const $count = document.getElementById("count");
+
+    function render(list, tokens){
+      if (!list.length){
+        $results.innerHTML = "";
+        $count.textContent = "No posts found.";
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "Try different keywords or clear the search.";
+        $results.appendChild(empty);
+        return;
+      }
+
+      $count.textContent = `${list.length} post${list.length>1?"s":""} found.`;
+      const html = list.map(a => `
+        <article class="card">
+          <h3 class="title"><a href="${a.url}" style="text-decoration:none; color:inherit">${highlight(a.title, tokens)}</a></h3>
+          <p class="excerpt">${highlight(a.excerpt, tokens)}</p>
+          <div class="meta">
+            <span>${new Date(a.date).toLocaleDateString()}</span>
+            ${a.tags.map(t=>`<span>• ${escapeHTML(t)}</span>`).join("")}
+          </div>
+        </article>
+      `).join("");
+      $results.innerHTML = html;
+    }
+
+    function search(query){
+      const tokens = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+      const filtered = ARTICLES.filter(a => {
+        const hay = (a.title + " " + a.excerpt + " " + a.tags.join(" ")).toLowerCase();
+        return tokens.every(t => hay.includes(t));
+      });
+      render(filtered, tokens);
+    }
+
+    let t; 
+    $q.addEventListener("input", (e)=>{
+      clearTimeout(t);
+      const v = e.target.value;
+      t = setTimeout(()=> search(v), 120);
+    });
+
+    render(ARTICLES, []);
+  </script>
+</body>
+</html>
